@@ -8,6 +8,7 @@ use crate::db::JiraDatabase;
 use crate::models::Action;
 
 mod page_helpers;
+
 use page_helpers::*;
 
 pub trait Page {
@@ -16,14 +17,25 @@ pub trait Page {
 }
 
 pub struct HomePage {
-    pub db: Rc<JiraDatabase>
+    pub db: Rc<JiraDatabase>,
 }
+
 impl Page for HomePage {
     fn draw_page(&self) -> Result<()> {
         println!("----------------------------- EPICS -----------------------------");
         println!("     id     |               name               |      status      ");
 
-        // TODO: print out epics using get_column_string(). also make sure the epics are sorted by id
+        let db_epics_state = &self.db.read_db()?.epics;
+        let epic_ids = db_epics_state.keys();
+
+        epic_ids.into_iter().sorted().for_each(|id| {
+            println!(
+                "{}|{}|{}",
+                get_column_string(id.to_string().as_str(), 12),
+                get_column_string(db_epics_state.get(&id).unwrap().name.as_str(), 34),
+                get_column_string(db_epics_state.get(&id).unwrap().status.to_string().as_str(), 18)
+            );
+        });
 
         println!();
         println!();
@@ -34,13 +46,33 @@ impl Page for HomePage {
     }
 
     fn handle_input(&self, input: &str) -> Result<Option<Action>> {
-        todo!() // match against the user input and return the corresponding action. If the user input was invalid return None.
+        let input_binding = input.to_lowercase();
+        let input_lower_case = input_binding.as_str();
+
+        let mut command: Action;
+
+        if input_lower_case == "q" {
+            command = Action::Exit;
+        } else if input_lower_case == "c" {
+            command = Action::CreateEpic;
+        } else if let Some(num) = input_lower_case.parse::<u32>().ok() {
+            let db_state = self.db.read_db().unwrap();
+            if db_state.epics.contains_key(&num) {
+                command = Action::NavigateToEpicDetail { epic_id: num }
+            } else {
+                return Ok(None);
+            }
+        } else {
+            return Ok(None);
+        }
+
+        Ok(Some(command))
     }
 }
 
 pub struct EpicDetail {
     pub epic_id: u32,
-    pub db: Rc<JiraDatabase>
+    pub db: Rc<JiraDatabase>,
 }
 
 impl Page for EpicDetail {
@@ -51,16 +83,31 @@ impl Page for EpicDetail {
         println!("------------------------------ EPIC ------------------------------");
         println!("  id  |     name     |         description         |    status    ");
 
-        // TODO: print out epic details using get_column_string()
-  
+        println!(
+            "{}|{}|{}|{}",
+            get_column_string(self.epic_id.to_string().as_str(), 6),
+            get_column_string(epic.name.as_str(), 14),
+            get_column_string(epic.description.as_str(), 31),
+            get_column_string(epic.status.to_string().as_str(), 14)
+        );
+
         println!();
 
         println!("---------------------------- STORIES ----------------------------");
         println!("     id     |               name               |      status      ");
 
         let stories = &db_state.stories;
+        let stories_ids = stories.keys();
 
         // TODO: print out stories using get_column_string(). also make sure the stories are sorted by id
+        stories_ids.into_iter().sorted().for_each(|id| {
+            println!(
+                "{}|{}|{}",
+                get_column_string(id.to_string().as_str(), 12),
+                get_column_string(stories.get(&id).unwrap().name.as_str(), 34),
+                get_column_string(stories.get(&id).unwrap().status.to_string().as_str(), 18)
+            );
+        });
 
         println!();
         println!();
@@ -71,14 +118,38 @@ impl Page for EpicDetail {
     }
 
     fn handle_input(&self, input: &str) -> Result<Option<Action>> {
-        todo!() // match against the user input and return the corresponding action. If the user input was invalid return None.
+        let input_binding = input.to_lowercase();
+        let input_lower_case = input_binding.as_str();
+
+        let mut command: Action;
+
+        if input_lower_case == "p" {
+            command = Action::NavigateToPreviousPage;
+        } else if input_lower_case == "c" {
+            command = Action::CreateStory { epic_id: self.epic_id };
+        } else if input_lower_case == "d" {
+            command = Action::DeleteEpic { epic_id: self.epic_id };
+        } else if input_lower_case == "u" {
+            command = Action::UpdateEpicStatus { epic_id: self.epic_id };
+        } else if let Some(num) = input_lower_case.parse::<u32>().ok() {
+            let db_state = self.db.read_db().unwrap();
+            if db_state.stories.contains_key(&num) {
+                command = Action::NavigateToStoryDetail { epic_id: self.epic_id, story_id: num }
+            } else {
+                return Ok(None);
+            }
+        } else {
+            return Ok(None);
+        }
+
+        Ok(Some(command))
     }
 }
 
 pub struct StoryDetail {
     pub epic_id: u32,
     pub story_id: u32,
-    pub db: Rc<JiraDatabase>
+    pub db: Rc<JiraDatabase>,
 }
 
 impl Page for StoryDetail {
@@ -88,9 +159,16 @@ impl Page for StoryDetail {
 
         println!("------------------------------ STORY ------------------------------");
         println!("  id  |     name     |         description         |    status    ");
-        
+
         // TODO: print out story details using get_column_string()
-        
+        println!(
+            "{}|{}|{}|{}",
+            get_column_string(self.story_id.to_string().as_str(), 6),
+            get_column_string(story.name.as_str(), 14),
+            get_column_string(story.description.as_str(), 29),
+            get_column_string(story.status.to_string().as_str(), 14)
+        );
+
         println!();
         println!();
 
@@ -100,7 +178,23 @@ impl Page for StoryDetail {
     }
 
     fn handle_input(&self, input: &str) -> Result<Option<Action>> {
-        todo!() // match against the user input and return the corresponding action. If the user input was invalid return None.
+        // match against the user input and return the corresponding action. If the user input was invalid return None.
+        let input_binding = input.to_lowercase();
+        let input_lower_case = input_binding.as_str();
+
+        let mut command: Action;
+
+        if input_lower_case == "p" {
+            command = Action::NavigateToPreviousPage;
+        } else if input_lower_case == "d" {
+            command = Action::DeleteStory { epic_id: self.epic_id, story_id: self.story_id };
+        } else if input_lower_case == "u" {
+            command = Action::UpdateStoryStatus { story_id: self.story_id };
+        } else {
+            return Ok(None);
+        }
+
+        Ok(Some(command))
     }
 }
 
@@ -120,7 +214,7 @@ mod tests {
             let page = HomePage { db };
             assert_eq!(page.draw_page().is_ok(), true);
         }
-        
+
         #[test]
         fn handle_input_should_not_throw_error() {
             let db = Rc::new(JiraDatabase { database: Box::new(MockDB::new()) });
@@ -213,7 +307,7 @@ mod tests {
             assert_eq!(page.handle_input(junk_input).unwrap(), None);
             assert_eq!(page.handle_input(junk_input_with_valid_prefix).unwrap(), None);
             assert_eq!(page.handle_input(input_with_trailing_white_spaces).unwrap(), None);
-        } 
+        }
     }
 
     mod story_detail_page {
@@ -276,6 +370,6 @@ mod tests {
             assert_eq!(page.handle_input(junk_input).unwrap(), None);
             assert_eq!(page.handle_input(junk_input_with_valid_prefix).unwrap(), None);
             assert_eq!(page.handle_input(input_with_trailing_white_spaces).unwrap(), None);
-        } 
+        }
     }
 }

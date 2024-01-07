@@ -1,7 +1,16 @@
 use ellipse::Ellipse;
 
 pub fn get_column_string(text: &str, width: usize) -> String {
-    todo!() // use the truncate_ellipse function from the ellipse crate
+    let text_len = text.len();
+
+    if width < 4 {
+        return "..."[..width].to_string();
+    } else if text_len == width {
+        return text.to_string();
+    } else if text_len < width {
+        return format!("{text}{}", (0..width - text_len).map(|_| " ").collect::<String>());
+    }
+    (&text[..width]).truncate_ellipse(width - 3).to_string()
 }
 
 #[cfg(test)]
@@ -41,5 +50,5 @@ mod tests {
         assert_eq!(get_column_string(text2, width), "test  ".to_owned());
         assert_eq!(get_column_string(text3, width), "testme".to_owned());
         assert_eq!(get_column_string(text4, width), "tes...".to_owned());
-    } 
+    }
 }
