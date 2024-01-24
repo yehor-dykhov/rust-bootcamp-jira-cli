@@ -1,4 +1,5 @@
 use std::rc::Rc;
+use std::any::Any;
 
 use itertools::Itertools;
 use anyhow::Result;
@@ -14,6 +15,7 @@ use page_helpers::*;
 pub trait Page {
     fn draw_page(&self) -> Result<()>;
     fn handle_input(&self, input: &str) -> Result<Option<Action>>;
+    fn as_any(&self) -> &dyn Any;
 }
 
 pub struct HomePage {
@@ -30,10 +32,10 @@ impl Page for HomePage {
 
         epic_ids.into_iter().sorted().for_each(|id| {
             println!(
-                "{}|{}|{}",
-                get_column_string(id.to_string().as_str(), 12),
-                get_column_string(db_epics_state.get(&id).unwrap().name.as_str(), 34),
-                get_column_string(db_epics_state.get(&id).unwrap().status.to_string().as_str(), 18)
+                "{} | {} | {}",
+                get_column_string(id.to_string().as_str(), 11).replace::<&str>(" ".as_ref(), ".".as_ref()),
+                get_column_string(db_epics_state.get(&id).unwrap().name.as_str(), 32).replace::<&str>(" ".as_ref(), ".".as_ref()),
+                get_column_string(db_epics_state.get(&id).unwrap().status.to_string().as_str(), 17).replace::<&str>(" ".as_ref(), ".".as_ref())
             );
         });
 
@@ -49,7 +51,7 @@ impl Page for HomePage {
         let input_binding = input.to_lowercase();
         let input_lower_case = input_binding.as_str();
 
-        let mut command: Action;
+        let command: Action;
 
         if input_lower_case == "q" {
             command = Action::Exit;
@@ -68,6 +70,10 @@ impl Page for HomePage {
 
         Ok(Some(command))
     }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 pub struct EpicDetail {
@@ -84,11 +90,11 @@ impl Page for EpicDetail {
         println!("  id  |     name     |         description         |    status    ");
 
         println!(
-            "{}|{}|{}|{}",
-            get_column_string(self.epic_id.to_string().as_str(), 6),
-            get_column_string(epic.name.as_str(), 14),
-            get_column_string(epic.description.as_str(), 31),
-            get_column_string(epic.status.to_string().as_str(), 14)
+            "{} | {} | {} | {}",
+            get_column_string(self.epic_id.to_string().as_str(), 5),
+            get_column_string(epic.name.as_str(), 12),
+            get_column_string(epic.description.as_str(), 27),
+            get_column_string(epic.status.to_string().as_str(), 13)
         );
 
         println!();
@@ -99,13 +105,12 @@ impl Page for EpicDetail {
         let stories = &db_state.stories;
         let stories_ids = stories.keys();
 
-        // TODO: print out stories using get_column_string(). also make sure the stories are sorted by id
         stories_ids.into_iter().sorted().for_each(|id| {
             println!(
-                "{}|{}|{}",
-                get_column_string(id.to_string().as_str(), 12),
-                get_column_string(stories.get(&id).unwrap().name.as_str(), 34),
-                get_column_string(stories.get(&id).unwrap().status.to_string().as_str(), 18)
+                "{} | {} | {}",
+                get_column_string(id.to_string().as_str(), 11),
+                get_column_string(stories.get(&id).unwrap().name.as_str(), 32),
+                get_column_string(stories.get(&id).unwrap().status.to_string().as_str(), 17)
             );
         });
 
@@ -121,7 +126,7 @@ impl Page for EpicDetail {
         let input_binding = input.to_lowercase();
         let input_lower_case = input_binding.as_str();
 
-        let mut command: Action;
+        let command: Action;
 
         if input_lower_case == "p" {
             command = Action::NavigateToPreviousPage;
@@ -144,6 +149,10 @@ impl Page for EpicDetail {
 
         Ok(Some(command))
     }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 pub struct StoryDetail {
@@ -160,13 +169,12 @@ impl Page for StoryDetail {
         println!("------------------------------ STORY ------------------------------");
         println!("  id  |     name     |         description         |    status    ");
 
-        // TODO: print out story details using get_column_string()
         println!(
-            "{}|{}|{}|{}",
-            get_column_string(self.story_id.to_string().as_str(), 6),
-            get_column_string(story.name.as_str(), 14),
-            get_column_string(story.description.as_str(), 29),
-            get_column_string(story.status.to_string().as_str(), 14)
+            "{} | {} | {} | {}",
+            get_column_string(self.story_id.to_string().as_str(), 5),
+            get_column_string(story.name.as_str(), 12),
+            get_column_string(story.description.as_str(), 27),
+            get_column_string(story.status.to_string().as_str(), 13)
         );
 
         println!();
@@ -182,7 +190,7 @@ impl Page for StoryDetail {
         let input_binding = input.to_lowercase();
         let input_lower_case = input_binding.as_str();
 
-        let mut command: Action;
+        let command: Action;
 
         if input_lower_case == "p" {
             command = Action::NavigateToPreviousPage;
@@ -195,6 +203,10 @@ impl Page for StoryDetail {
         }
 
         Ok(Some(command))
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 

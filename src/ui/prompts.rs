@@ -67,7 +67,7 @@ fn delete_story_prompt() -> bool {
 }
 
 fn update_status_prompt() -> Option<Status> {
-    println!("Update Story");
+    println!("Update Status");
     println!("```");
     println!("----------------------------");
     println!("New Status (1 - OPEN, 2 - IN-PROGRESS, 3 - RESOLVED, 4 - CLOSED):");

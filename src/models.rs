@@ -3,7 +3,7 @@ use std::fmt;
 use std::fmt::Display;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Action {
     NavigateToEpicDetail { epic_id: u32 },
     NavigateToStoryDetail { epic_id: u32, story_id: u32 },
